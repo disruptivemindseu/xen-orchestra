@@ -19,6 +19,7 @@
 - [MCP] Generate tools dynamically from the XO OpenAPI spec at startup: one `{domain}_query` tool per resource domain instead of a fixed tool per endpoint. Stats endpoints are excluded. Write operations can be opted in with `XO_MCP_ENABLE_ACTIONS=1`, with one-shot confirmation tokens for destructive calls. (PR [#9641](https://github.com/vatesfr/xen-orchestra/pull/9641))
 - [OpenMetrics] Add per-VDI disk size metrics: `xcp_vdi_virtual_size_bytes` and `xcp_vdi_physical_usage_bytes` [#9680](https://github.com/vatesfr/xen-orchestra/pull/9680)
 - [i18n] Update Chinese (Simplified Han script), Czech, Dutch, German, Persian, Polish, Portuguese, Portuguese (Brasil), Slovak, Spanish and Swedish translations (PR [#9729](https://github.com/vatesfr/xen-orchestra/pull/9729))
+- [REST API] Add `POST rest/v0/plugins/sdn-controller/networks/:id/actions/add_traffic_rule` and `POST rest/v0/plugins/sdn-controller/networks/:id/actions/delete_traffic_rule` endpoints ([#9418](https://github.com/vatesfr/xen-orchestra/pull/9418))
 
 ### Bug fixes
 
