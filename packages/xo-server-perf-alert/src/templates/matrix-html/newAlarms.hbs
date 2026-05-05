@@ -1,0 +1,8 @@
+{{#each byRules}}
+<h4>{{alarms.0.rule.objectType}} {{alarms.0.rule.variableName}} {{alarms.0.rule.comparator}} {{alarms.0.rule.triggerLevel}}%</h4>
+<ul>
+{{#each alarms}}
+<li><a href="{{url}}">{{target.name_label}}</a>: {{value}}</li>
+{{/each}}
+</ul>
+{{/each}}

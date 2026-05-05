@@ -74,23 +74,77 @@ class PerfAlertXoPlugin {
     let subject = ''
     if (newAlarms.size > 0) {
       if (activeAlarms.size === 0) {
-        subject = 'Performance Alerts: Alerting has started'
+        subject = '❌ Performance Alerts: Alerting has started'
       } else {
-        subject = `Performance Alerts: ${newAlarms.size} new alert(s) detected`
+        subject = `❌ Performance Alerts: ${newAlarms.size} new alert(s) detected`
         if (closedAlarms.size > 0) {
-          subject += `, ${closedAlarms.size} alert(s) resolved`
+          subject += `, ✅ ${closedAlarms.size} alert(s) resolved`
         }
       }
     } else {
       if (activeAlarms.size === 0) {
-        subject = 'Performance Alerts: All alerts resolved'
+        subject = '✅ Performance Alerts: All alerts resolved'
       } else {
-        subject = `Performance Alerts: ${closedAlarms.size} alert(s) resolved`
+        subject = `✅ Performance Alerts: ${closedAlarms.size} alert(s) resolved`
       }
     }
     const { html } = await templates.mjml.transform(templates.mjml.$newAlarms({ byRules }))
-    const text = await templates.markdown.$newAlarms({ byRules })
-    return this._sendAlertEmail(subject, html, text)
+    const text = await templates['matrix-text'].$newAlarms({ byRules })
+    const { html: matrixHtml } = await templates['matrix-html'].transform(templates['matrix-html'].$newAlarms({ byRules }))
+
+    await this._sendAlerts(subject, html, text, matrixHtml)
+  }
+
+  /**
+   * Send alerts via configured channels (email and/or Matrix)
+   * @param {string} subject
+   * @param {string} html
+   * @param {string} text
+   * @param {string} matrixHtml
+   */
+  async _sendAlerts(subject, html, text, matrixHtml) {
+    const promises = []
+
+    if (this.#configuration.toEmails !== undefined && this._xo.sendEmail !== undefined) {
+      promises.push(
+        Promise.resolve(
+          this._xo.sendEmail({
+            to: this.#configuration.toEmails,
+            subject,
+            html,
+            text,
+          })
+        ).catch(error => {
+          logger.error('[WARN] plugin perf-alert: Failed to send email:', error.message)
+        })
+      )
+    }
+
+    if (this.#configuration.matrixRoomId !== undefined && this._xo.sendMatrixMessage !== undefined) {
+      promises.push(this._sendMatrixAlert(subject, text, matrixHtml).catch(error => {
+        logger.error('[WARN] plugin perf-alert: Failed to send Matrix alert:', error.message)
+      }))
+    }
+
+    await Promise.all(promises)
+  }
+
+  /**
+   * Send alert via Matrix using the transport-matrix plugin
+   * @param {string} subject
+   * @param {string} text
+   * @param {string} matrixHtml
+   */
+  async _sendMatrixAlert(subject, text, matrixHtml) {
+    return this._xo.sendMatrixMessage({
+      roomId: this.#configuration.matrixRoomId,
+      content: {
+        msgtype: 'm.text',
+        body: `${subject}\n\n${text}`,
+        format: 'org.matrix.custom.html',
+        formatted_body: `<h3>${subject}</h3>\n${matrixHtml}`,
+      },
+    })
   }
 
   async load() {
@@ -138,25 +192,6 @@ class PerfAlertXoPlugin {
   }
 
   async test() {}
-
-  /**
-   *
-   * @param {string} subject
-   * @param {string} html
-   * @param {string} markdown
-   */
-  _sendAlertEmail(subject, html, markdown) {
-    if (this.#configuration.toEmails !== undefined && this._xo.sendEmail !== undefined) {
-      this._xo.sendEmail({
-        to: this.#configuration.toEmails,
-        subject,
-        html,
-        text: markdown,
-      })
-    } else {
-      throw new Error('The email alert system has a configuration issue.')
-    }
-  }
 }
 
 exports.default = function ({ xo }) {

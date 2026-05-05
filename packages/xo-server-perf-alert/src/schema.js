@@ -211,5 +211,10 @@ export const configurationSchema = {
       },
       minItems: 1,
     },
+    matrixRoomId: {
+      type: 'string',
+      title: 'Matrix Room ID',
+      description: 'The Matrix room ID where alerts will be sent (e.g., !abc123:matrix.org). Requires transport-matrix plugin configured.',
+    },
   },
 }
